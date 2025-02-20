@@ -3,42 +3,43 @@ import axios from 'axios';
 import ImageSelector from './ImageSelector';
 import SongSelector from './SongSelector';
 
-function VideoGenerator({ script, image, audio }) {
+
+function VideoGenerator({ script, image }) {
   const [showVideo, setShowVideo] = useState(false);
   const [videoUrl, setVideoUrl] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [selectedSong, setSelectedSong] = useState(null);
+ 
 
-  const handleImageSelect = (image) => {
-    setSelectedImage(image);
-  };
+  // const handleImageSelect = (image) => {
+  //   setSelectedImage(image);
+  // };
 
-  const handleSongSelect = (song) => {
-    setSelectedSong(song);
-  };
+  // const handleSongSelect = (song) => {
+  //   setSelectedSong(song);
+  // };
 
-  const checkVideoStatus = async (taskId) => {
-    try {
-      const response = await axios.get(`http://localhost:5000/api/video-status/${taskId}`);
-      if (response.data.status === 'completed') {
-        setVideoUrl(response.data.videoUrl);
-        setShowVideo(true);
-        setLoading(false);
-      } else if (response.data.status === 'processing') {
-        setGenerationProgress(response.data.progress || 0);
-        setTimeout(() => checkVideoStatus(taskId), 5000); // Poll every 5 seconds
-      }
-    } catch (error) {
-      setError('Failed to check video status');
-      setLoading(false);
-    }
-  };
+
+  // const checkVideoStatus = async () => {
+  //   try {
+  //     const response = await axios.get(`http://localhost:5000/api/video-status/${taskId}`);
+  //     if (response.data.status === 'completed') {
+  //       setVideoUrl(response.data.videoUrl);
+  //       setShowVideo(true);
+  //       setLoading(false);
+  //     } else if (response.data.status === 'processing') {
+  //       setGenerationProgress(response.data.progress || 0);
+  //       setTimeout(() => checkVideoStatus(taskId), 5000); // Poll every 5 seconds
+  //     }
+  //   } catch (error) {
+  //     setError('Failed to check video status');
+  //     setLoading(false);
+  //   }
+  // };
 
   const handleGenerateVideo = async () => {
-    if (!script || !selectedImage) {
+    if (!script || !image) {
       setError('Both script and image are required to generate a video.');
       return;
     }
@@ -47,53 +48,34 @@ function VideoGenerator({ script, image, audio }) {
     setError('');
     setGenerationProgress(0);
 
-    try {
-      const formData = new FormData();
-      formData.append('script', script);
-      formData.append('image', image);
-      if (audio) {
-        formData.append('audio', audio);
-      }
-
-      const response = await axios.post('http://localhost:5000/api/generate-video', 
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-
-      if (response.data.taskId) {
-        checkVideoStatus(response.data.taskId);
-      }
-    } catch (error) {
-      setError(error.response?.data?.error || 'Failed to generate video');
+    const response = await fetch('http://localhost:5000/api/generate-video', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ script, image })
+    });
+    console.log(response)
+    if (response.ok) {
+      const data = await response.json();
+      setVideoUrl(data.videoUrl);
+      setShowVideo(true);
+      setLoading(false);
+    } else {
+      setError('Failed to generate video');
       setLoading(false);
     }
+    
   };
 
   return (
     <div className="p-12 bg-gray-100">
-      <h2 className="text-lg font-semibold">Generated Script</h2>
-      <textarea
-        className="w-full h-32 p-2 mt-2 border rounded-xl"
-        value={script}
-        readOnly={!script}
-        placeholder="Your generated script will appear here..."
-      />
-       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        <ImageSelector onImageSelect={handleImageSelect} />
-        <SongSelector onSongSelect={handleSongSelect} />
-      </div>
-      
-      {error && <p className="text-red-500 mt-2">{error}</p>}
-      <button
+     <button
         className={`w-full p-2 mt-4 text-white rounded-xl transition-colors ${
-          script &&  selectedImage && !loading ? 'bg-black hover:bg-gray-800 cursor-allowed' : 'bg-gray-400 cursor-not-allowed'
+          script  && !loading ? 'bg-black hover:bg-gray-800 cursor-allowed' : 'bg-gray-400 cursor-not-allowed'
         }`}
         onClick={handleGenerateVideo}
-        disabled={!script || !selectedImage || loading}
+        disabled={!script || loading}
       >
         {loading ? 'Generating Video...' : 'Generate Video'}
       </button>

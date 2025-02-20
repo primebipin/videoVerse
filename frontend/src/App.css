@@ -40,3 +40,26 @@
 .read-the-docs {
   color: #888;
 }
+
+.image-container {
+  width: 300px; /* Set a fixed width */
+  height: 300px; /* Set a fixed height to maintain a square */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px dashed #ccc;
+  margin-top: 20px;
+  overflow: hidden; /* Ensure content doesn't overflow the box */
+  background-color: #f9f9f9; /* Light background color */
+}
+
+.placeholder {
+  text-align: center;
+  color: #888;
+}
+
+.image-container img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain; /* Ensure the image fits within the box */
+}

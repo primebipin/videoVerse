@@ -1,40 +1,52 @@
 import React, { useState } from 'react';
+import { FaImage } from 'react-icons/fa';
 
-function ImageSelector({ onImageSelect }) {
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState('');
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedImage(file);
-      onImageSelect(file);
-      setPreviewUrl(URL.createObjectURL(file));
+function ImageSelector({ setImage, image, script }) {
+  const [isLoading, setIsLoading] = useState(false);
+
+  async function handleGenerate() {
+    try {
+      const response = await fetch('http://localhost:5000/api/generate-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ script }) // Send the script to the backend
+      });
+      console.log(response)
+      if (response.ok) {
+        const data = await response.json();
+        setImage(data.imageUrl); 
+      } else {
+        console.error('Failed to generate image');
+      }
+    } catch (error) {
+      console.error('Error:', error);
     }
-  };
+  }
 
   return (
-    <div className="mt-4">
-      <h2 className="text-lg font-semibold mb-2">Character Image (Required)</h2>
-      <div className="flex items-center space-x-4">
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleImageChange}
-          className="w-full p-2 border rounded-xl"
-        />
-        {previewUrl && (
-          <div className="relative w-20 h-20">
-            <img
-              src={previewUrl}
-              alt="Preview"
-              className="w-full h-full object-cover rounded-lg"
-            />
-          </div>
-        )}
-      </div>
+    <div className="p-12 bg-gray-100">
+      {/* Display the generated image */}
+      {image ? (
+        <img src={`${image}`}  alt="Generated" style={{ width: 200, height: 200, objectFit: "cover", borderRadius:"50%"}} />
+      ) : (
+        <div className="placeholder">
+          <FaImage size={200} color="#ccc" />
+        </div>
+      )}
+
+      <button className={`bg-black text-white p-2 rounded-xl mt-2 ${
+          !isLoading && script ? 'bg-black hover:bg-gray-800' : 'bg-gray-400 cursor-not-allowed'
+        }`}
+       onClick={handleGenerate}
+        disabled={ !script ||isLoading}
+      >
+        {isLoading ? 'Generating...' : 'Generate Character'}
+      </button>
     </div>
   );
 }
 
-export default ImageSelector; 
+export default ImageSelector;

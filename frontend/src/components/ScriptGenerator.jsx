@@ -1,26 +1,17 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-// import SongSelector from './SongSelector';
-// import ImageSelector from './ImageSelector';
+import ReactMarkdown from 'react-markdown';
 
-function ScriptGenerator({ onScriptGenerated }) {
+function ScriptGenerator({ setScript, script }) {
   const [description, setDescription] = useState('');
   const [length, setLength] = useState('');
   const [warning, setWarning] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  // const [selectedImage, setSelectedImage] = useState(null);
-  // const [selectedSong, setSelectedSong] = useState(null);
-
-  // const handleImageSelect = (image) => {
-  //   setSelectedImage(image);
-  // };
-
-  // const handleSongSelect = (song) => {
-  //   setSelectedSong(song);
-  // };
+  const [loading, setLoading] = useState(false);
 
   const handleGenerateScript = async () => {
     if (!description || !length) {
+      console.log('Please fill in all required fields.');
       setWarning('Please fill in all required fields.');
       return;
     }
@@ -29,36 +20,26 @@ function ScriptGenerator({ onScriptGenerated }) {
     setWarning('');
 
     try {
-      const formData = new FormData();
-      formData.append('description', description);
-      formData.append('length', length);
-      
-
-      const response = await axios.post('http://localhost:5000/api/generate-script', 
-        formData,
+      const response = await fetch('http://localhost:5000/api/generate-script', 
         {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ description: description, length: length }),
         }
       );
 
-      if (response.data.script) {
-        onScriptGenerated(response.data.script);
-      }
+      const data = await response.json();
+      const generatedScript = data.generatedScript;
+      console.log(data)
+      setScript(generatedScript);
     } catch (error) {
-      const errorMessage = error.response?.data?.error || 
-                          error.response?.data?.details || 
-                          'Failed to generate script';
-      setWarning(errorMessage);
-      
-      if (error.response?.data?.details === 'API key validation failed') {
-        console.error('API key configuration error');
-      }
+      console.error('Error generating script:', error);
+      setWarning('Failed to generate script. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
+
 
   return (
     <div className="p-12 bg-gray-100">
@@ -69,11 +50,6 @@ function ScriptGenerator({ onScriptGenerated }) {
         value={description}
         onChange={(e) => setDescription(e.target.value)}
       />
-
-      {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        <ImageSelector onImageSelect={handleImageSelect} />
-        <SongSelector onSongSelect={handleSongSelect} />
-      </div> */}
 
       <h2 className="mt-4 text-lg font-semibold">Video Length</h2>
       <select
@@ -100,6 +76,19 @@ function ScriptGenerator({ onScriptGenerated }) {
       >
         {isLoading ? 'Generating...' : 'Generate Script'}
       </button>
+      <h2 className="text-lg font-semibold">Generated Script</h2>
+      <div className="w-full h-40 p-5 mt-2 border border-gray-600 rounded-xl overflow-auto whitespace-pre-wrap break-words"
+       contentEditable={!!script} // Editable only when script is present
+       suppressContentEditableWarning={true} // Suppress React warning
+      >
+        {script ? (
+          <ReactMarkdown>{script}</ReactMarkdown>
+        ) : (
+          <span className="placeholder">See the output here...</span>
+        )}
+      </div>
+
+      
     </div>
   );
 }
